@@ -1,0 +1,287 @@
+# Open Street Map - Data Wrangling With MongoDB
+### Map Area: Mumbai, India
+
+## Problems Faced in the Dataset
+OpenStreetMap is an open project, which means it's free and everyone can use it and edit as they like. OpenStreetMap is direct competitor of Google Maps. How OpenStreetMap can compete with the giant you ask? It's depend completely on crowd sourcing. There's lot of people willingly update the map around the world, most of them fix their map country.
+
+Openstreetmap is so powerful, and rely heavily on the human input. But its strength also the downfall. Everytime there's human input, there's always be human error.It's very error prone.
+
+I decided to take the data from my hometown Mumbai, India. After having downloaded the data set which was around 1110 MB. I began diving into the knitty gritties of the data.
+Some of the problems I faced were as follows
+
+- Street addresses were poorly name which include data like Rd. stn for Road and Station namely.
+- Since India was under british colonial rule before 1947, a lot of people continue to associate few names as they were used earlier. For example: Victoria Station was renamed to Chhatrapi Shivaji Teminus. Sion is now names Shiva.
+- In Mumbai, Roads are often referred to as Marg and Lanes are suburbs/town are reffered to as nagar.
+- Chowk is used to denote a crossroad. Navi Mumbai is divided into sectors and not roads.
+
+## Solving the above problems:
+```
+Mapping = { 
+             
+             "St.": "Street",
+             "Rd." : "Road",
+             "N.":"North",
+             "St" : "Street",
+             "no" : "No",
+             "Rd" : "Road",
+             "ROAD" : "Road",
+             "ROad" : "Road",
+             "marg" : "Road",
+             "road" : "Road",
+             "stn" : "Station",
+             "Marg" : "Road",
+             "lane" : "Lane",
+             "sector" : "Sector",
+             "Sion": "Shiv",
+             "Nagar": "Suburb"
+             }
+```
+Using the above mapping structure, I first parsed individual tags that contains the street names. Once I had this value, I later checked to ensure if it is in expected value list. If not they were simply replaced the values of the above Dictionary.
+
+## Data Overview
+This Section Describes the statistics of the dataset used and the basic queries performed
+
+### File Sizes
+
+mumbai_india.osm ...... 110.1 MB
+
+mumbai_india_audit.osm.json ....... 128.1 MB
+
+### Number of Documents
+```
+>>> db.mumbaifinal.find().count()
+595365
+```
+
+### Number of Nodes
+```
+>>> db.mumbaifinal.find({"type":"node"}).count()
+546483
+```
+
+### Number of ways
+```
+>>> db.mumbaifinal.find({"type":"way"}).count()
+48675
+```
+###Top 1 Contributing user
+```
+>>>pipeline = [
+            {'$match': {'created.user':{'$exists':1}}},
+            {'$group': {'_id':'$created.user',
+                        'count':{'$sum':1}}},
+            {'$sort': {'count':-1}},
+            {'$limit' : 1}
+]
+>>>for doc in db.mumbaifinal.aggregate(pipeline):
+...   pprint.pprint(doc)
+
+{u'_id': u'parambyte', u'count': 92480}
+```
+### Number of users having only one post
+```
+>>>result = db.mumbaifinal.aggregate([{"$group":{"_id":"$created.user", "count":{"$sum":1}}}, {"$group":{"_id":"$count", "num_users":{"$sum":1}}}, {"$sort":{"_id":1}}, {"$limit":1}])
+>>>for doc in result:
+      pprint.pprint(doc)
+      
+{u'_id': 1, u'num_users': 188}
+```
+
+## Additional MongoDB Queries
+
+### Showing Data with street names(5)
+```
+>>>pipeline = [
+            {'$match': {'address.street':{'$exists':1}}},
+            {'$limit' : 5}
+]
+>>>for doc in db.mumbaifinal.aggregate(pipeline):
+...   pprint.pprint(doc)
+
+{u'_id': ObjectId('5573faac5a0cb3031ab4bf62'),
+ u'address': {u'street': u'Gandhi Chauk'},
+ u'created': {u'changeset': u'6947215',
+              u'timestamp': u'2011-01-12T13:33:05Z',
+              u'uid': u'81059',
+              u'user': u'Meghanand',
+              u'version': u'14'},
+ u'highway': u'mini_roundabout',
+ u'id': u'317924881',
+ u'pos': [19.1629512, 73.239807],
+ u'type': u'node'}
+ 
+{u'_id': ObjectId('5573faad5a0cb3031ab4c336'),
+ u'address': {u'street': u'Chintamani Chowk'},
+ u'created': {u'changeset': u'25007862',
+              u'timestamp': u'2014-08-25T16:25:27Z',
+              u'uid': u'1829683',
+              u'user': u'Luis36995',
+              u'version': u'5'},
+ u'id': u'338560825',
+ u'pos': [19.1686163, 73.2439648],
+ u'type': u'node'}
+ 
+{u'_id': ObjectId('5573faae5a0cb3031ab4d1c3'),
+ u'address': {u'street': u'Street Aloysius School'},
+ u'amenity': u'school',
+ u'created': {u'changeset': u'508228',
+              u'timestamp': u'2009-02-17T09:41:24Z',
+              u'uid': u'57987',
+              u'user': u'deye',
+              u'version': u'2'},
+ u'created_by': u'Potlatch 0.10f',
+ u'id': u'346592022',
+ u'name': u'Street Aloysius School',
+ u'pos': [19.0507482, 72.827921],
+ u'type': u'node'}
+ 
+{u'_id': ObjectId('5573faae5a0cb3031ab4d2cc'),
+ u'address': {u'street': u'Street Peter Church'},
+ u'amenity': u'place_of_worship',
+ u'created': {u'changeset': u'3384660',
+              u'timestamp': u'2009-12-16T06:12:20Z',
+              u'uid': u'3962',
+              u'user': u'RussNelson',
+              u'version': u'3'},
+ u'denomination': u'roman_catholic',
+ u'id': u'346625096',
+ u'name': u'Street Peter Church',
+ u'pos': [19.0547341, 72.8294913],
+ u'religion': u'christian',
+ u'type': u'node'}
+ 
+{u'_id': ObjectId('5573faae5a0cb3031ab4d34e'),
+ u'address': {u'street': u"Street Andrew's College"},
+ u'amenity': u'college',
+ u'created': {u'changeset': u'526403',
+              u'timestamp': u'2009-02-17T21:18:14Z',
+              u'uid': u'57987',
+              u'user': u'deye',
+              u'version': u'1'},
+ u'created_by': u'Potlatch 0.10f',
+ u'id': u'347036704',
+ u'name': u"Street Andrew's College",
+ u'pos': [19.0566226, 72.8287305],
+ u'type': u'node'}
+```
+
+### Show the top 5 contributed users
+
+```
+>>>pipeline = [
+            {'$match': {'created.user':{'$exists':1}}},
+            {'$group': {'_id':'$created.user',
+                        'count':{'$sum':1}}},
+            {'$sort': {'count':-1}},
+            {'$limit' : 5}
+]
+>>>for doc in db.mumbaifinal.aggregate(pipeline):
+...   pprint.pprint(doc)
+
+{u'_id': u'parambyte', u'count': 92480}
+{u'_id': u'PlaneMad', u'count': 64837}
+{u'_id': u'balaji88', u'count': 57991}
+{u'_id': u'MJL Wood', u'count': 57662}
+{u'_id': u'udaya', u'count': 42490}
+```
+
+### Showing Restaurant Names
+```
+
+>>>pipeline = [
+            {'$match': {'amenity':'restaurant',
+                        'name':{'$exists':1}}},
+            {'$project':{'_id':'$name',
+                         'cuisine':'$cuisine',
+                         'contact':'$phone'}}
+]
+>>>for doc in db.mumbaifinal.aggregate(pipeline):
+...   pprint.pprint(doc)
+
+{u'_id': u'Copper Chimney'}
+{u'_id': u"Dara's Dhaba"}
+{u'_id': u'Haveli Inn'}
+{u'_id': u'Good Luck Cafe'}
+{u'_id': u"Smokin Joe's"}
+{u'_id': u'Wan Ton Chinese Restaurant'}
+{u'_id': u'Ruchit Palace'}
+{u'_id': u'Jai Hind'}
+{u'_id': u'Agni Resort', u'cuisine': u'indian'}
+{u'_id': u'Memory'}
+{u'_id': u'Monalisa'}
+{u'_id': u'Ever Green'}
+{u'_id': u'Shriram'}
+{u'_id': u'New Martin Hotel'}
+{u'_id': u'Navaratna'}
+{u'_id': u'Hotel Ambika'}
+{u'_id': u'Hotel Atithi'}
+{u'_id': u'Mahesh Lunch Home'}
+{u'_id': u'Mocambo Cafe'}
+...
+
+```
+
+### Showing the top 10 amenities
+```
+>>>pipeline = [{"$match":{"amenity":{"$exists":1}}}, {"$group":{"_id":"$amenity","count":{"$sum":1}}}, {"$sort":{"count":1}}, {"$limit":10}
+]
+
+u'_id': u'shelter', u'count': 1}
+{u'_id': u'waste_transfer_station', u'count': 1}
+{u'_id': u'dentist', u'count': 1}
+{u'_id': u'fairgrounds', u'count': 1}
+{u'_id': u'pl', u'count': 1}
+{u'_id': u'Educational Complex', u'count': 1}
+{u'_id': u'market', u'count': 1}
+{u'_id': u'yes', u'count': 1}
+{u'_id': u'Canteen', u'count': 1}
+{u'_id': u'club', u'count': 1}
+```
+### Biggest Religion
+```
+for doc in db.mumbaifinal.aggregate([{"$match":{"amenity":{"$exists":1}, "amenity":"place_of_worship"}},{"$group":{"_id":"$religion", "count":{"$sum":1}}},{"$sort":{"count":1}}, {"$limit":1}]):
+...     pprint.pprint(doc)
+... 
+{u'_id': u'hare_krishna', u'count': 1}
+```
+
+## Aditional Ideas
+- The top 5 users contributed almost 95% of the data on the map. As a result of this, information is skewed and does not contain detailed information.
+- The railway system at Mumbai are divided into three groups viz Central, Western and Harbour. However, the data doesn't clearly detail this. Creating this field could detail the most important transport system in Mumbai.
+
+```
+>>>pipeline = [
+            {'$match': {'railway':{'$exists':1}}},
+            {'$limit' : 5}
+]
+>>>for doc in db.mumbaifinal.aggregate():
+    pprint.pprint(doc)
+    
+{u'_id': ObjectId('5573faa55a0cb3031ab4633e'),
+ u'created': {u'changeset': u'25655940',
+              u'timestamp': u'2014-09-25T00:22:57Z',
+              u'uid': u'1859494',
+              u'user': u'Jacob Cyriac',
+              u'version': u'5'},
+ u'id': u'30518361',
+ u'pos': [19.2981115, 72.9840994],
+ u'railway': u'station',
+ u'type': u'node'}
+ 
+{u'_id': ObjectId('5573faa55a0cb3031ab46369'),
+ u'created': {u'changeset': u'27637955',
+              u'timestamp': u'2014-12-22T20:24:58Z',
+              u'uid': u'8339',
+              u'user': u'mtmail',
+              u'version': u'11'},
+ u'id': u'30519417',
+ u'name': u'Dombivli',
+ u'pos': [19.2184202, 73.087439],
+ u'railway': u'station',
+ u'type': u'node'}
+ ...
+```
+
+## Conclusion
+
+After having played around with the data from Mumbai, I believe the information is incomplete and has a lot of erroneous values in terms of naming standard. Although I have cleaned a lot of it during this excercise, its far from perfect. Alaso amenities like restaurant don't have the cuisine served and their contact. Such data can prove to be extreemely useful for building application on the data entered by users. As human entered data the trade off between the standard of data and information is almost balanced. Thus, you would expect a high level of detail from users who have visited a certain place. This however has not been possible in the case of this dataset due to the fact that the number of users who have contributed to the same is very low. It is possible to enter more clean data into openmaps by providing a guideline for place by place. Human Checking is needed for such a kind of solution.
