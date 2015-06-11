@@ -73,7 +73,7 @@ img {
 <p>I decided to take the data from my hometown Mumbai, India. After having downloaded the data set which was around 1110 MB. I began diving into the knitty gritties of the data. Some of the problems I faced were as follows</p>
 <ul>
 <li>Street addresses were poorly name which include data like Rd. stn for Road and Station namely.</li>
-<li>Since India was under british colonial rule before 1947, a lot of people continue to associate few names as they were used earlier. For example: Victoria Station was renamed to Chhatrapi Shivaji Teminus. Sion is now names Shiva.</li>
+<li>Since India was under british colonial rule before 1947, a lot of people continue to associate few names as they were used earlier. For example: Victoria Station was renamed to Chhatrapi Shivaji Teminus. Sion is now named Shiv.</li>
 <li>In Mumbai, Roads are often referred to as Marg and Lanes are suburbs/town are reffered to as nagar.</li>
 <li>Chowk is used to denote a crossroad. Navi Mumbai is divided into sectors and not roads.</li>
 </ul>
@@ -99,7 +99,27 @@ img {
              &quot;Sion&quot;: &quot;Shiv&quot;,
              &quot;Nagar&quot;: &quot;Suburb&quot;
              }</code></pre>
+<p>For example: Shivaji nagar Depot =&gt; Shivaji Road Depot. Mahalakshmi Marg=&gt; Mahalakshmi Road</p>
+<p>These are language specific problems that were encountered in the dataset. Marg is used to denote road and so on.</p>
+<pre><code>def update_name(name, mapping):
+    dict_map = sorted(mapping.keys(), key=len, reverse=True)
+    for key in dict_map:
+        
+        if name.find(key) != -1:          
+            name = name.replace(key,mapping[key])
+            return name
+
+
+    return name</code></pre>
+<p>The following piece of code was used to correct the errors present.</p>
 <p>Using the above mapping structure, I first parsed individual tags that contains the street names. Once I had this value, I later checked to ensure if it is in expected value list. If not they were simply replaced the values of the above Dictionary.</p>
+</div>
+<div id="zip-code-errors" class="section level2">
+<h2>Zip Code Errors</h2>
+<p>Zip codes were coarsely depicted with less characters. all zip codes in Mumbai begin with 4. So all data with zip codes as 98,76 were modified as 400098 and 400076.</p>
+<pre><code>&lt;tag k=&quot;addr:postcode&quot; v=&quot;61&quot;/&gt; =&gt; &lt;tag k=&quot;addr:postcode&quot; v=&quot;400061&quot;/&gt; 
+&lt;tag k=&quot;addr:postcode&quot; v=&quot;98&quot;/&gt; =&gt; &lt;tag k=&quot;addr:postcode&quot; v=&quot;400098&quot;/&gt; 
+&lt;tag k=&quot;addr:postcode&quot; v=&quot;71&quot;/&gt; =&gt; &lt;tag k=&quot;addr:postcode&quot; v=&quot;400071&quot;/&gt; </code></pre>
 </div>
 <div id="data-overview" class="section level2">
 <h2>Data Overview</h2>
@@ -306,6 +326,8 @@ u'_id': u'shelter', u'count': 1}
 <ul>
 <li>The top 5 users contributed almost 95% of the data on the map. As a result of this, information is skewed and does not contain detailed information.</li>
 <li>The railway system at Mumbai are divided into three groups viz Central, Western and Harbour. However, the data doesn’t clearly detail this. Creating this field could detail the most important transport system in Mumbai.</li>
+<li>With the queries conducted, there was more of a focus on the study of node ???places??? rather than ways and their respective node ‘waypoints’. A large number of nodes do not include any kind of addresses,Therefore we could compress the data by removing such orphaned waypoints.Furthermore, if ways were still needed, it would still be possible to remove any ???orphaned??? nodes that were only referenced in the removed relation and member tags.</li>
+<li>There are still several opportunities for cleaning and validation that I left unexplored. Of note, the data set is populated only from one source: OpenStreetMaps. While this crowdsourced repository pulls from multiple sources. It would have been an interesting exercise to validate and/or pull missing information (i.e. names) from the Google Maps API, since every node has latitude-longitude coordinates.</li>
 </ul>
 <pre><code>&gt;&gt;&gt;pipeline = [
             {'$match': {'railway':{'$exists':1}}},

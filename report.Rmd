@@ -10,9 +10,11 @@ I decided to take the data from my hometown Mumbai, India. After having download
 Some of the problems I faced were as follows
 
 - Street addresses were poorly name which include data like Rd. stn for Road and Station namely.
-- Since India was under british colonial rule before 1947, a lot of people continue to associate few names as they were used earlier. For example: Victoria Station was renamed to Chhatrapi Shivaji Teminus. Sion is now names Shiva.
+- Since India was under british colonial rule before 1947, a lot of people continue to associate few names as they were used earlier. For example: Victoria Station was renamed to Chhatrapi Shivaji Teminus. Sion is now named Shiv.
 - In Mumbai, Roads are often referred to as Marg and Lanes are suburbs/town are reffered to as nagar.
 - Chowk is used to denote a crossroad. Navi Mumbai is divided into sectors and not roads.
+
+
 
 ## Solving the above problems:
 ```
@@ -36,7 +38,37 @@ Mapping = {
              "Nagar": "Suburb"
              }
 ```
+For example:
+Shivaji nagar Depot => Shivaji Road Depot.
+Mahalakshmi Marg=> Mahalakshmi Road
+
+
+These are language specific problems that were encountered in the dataset. Marg is used to denote road and so on.
+
+```
+def update_name(name, mapping):
+    dict_map = sorted(mapping.keys(), key=len, reverse=True)
+    for key in dict_map:
+        
+        if name.find(key) != -1:          
+            name = name.replace(key,mapping[key])
+            return name
+
+
+    return name
+```
+The following piece of code was used to correct the errors present. 
+
 Using the above mapping structure, I first parsed individual tags that contains the street names. Once I had this value, I later checked to ensure if it is in expected value list. If not they were simply replaced the values of the above Dictionary.
+
+## Zip Code Errors
+
+Zip codes were coarsely depicted with less characters. all zip codes in Mumbai begin with 4. So all data with zip codes as 98,76 were modified as 400098 and 400076.
+```
+<tag k="addr:postcode" v="61"/> => <tag k="addr:postcode" v="400061"/> 
+<tag k="addr:postcode" v="98"/> => <tag k="addr:postcode" v="400098"/> 
+<tag k="addr:postcode" v="71"/> => <tag k="addr:postcode" v="400071"/> 
+```
 
 ## Data Overview
 This Section Describes the statistics of the dataset used and the basic queries performed
@@ -246,8 +278,11 @@ for doc in db.mumbaifinal.aggregate([{"$match":{"amenity":{"$exists":1}, "amenit
 ```
 
 ## Aditional Ideas
+
 - The top 5 users contributed almost 95% of the data on the map. As a result of this, information is skewed and does not contain detailed information.
 - The railway system at Mumbai are divided into three groups viz Central, Western and Harbour. However, the data doesn't clearly detail this. Creating this field could detail the most important transport system in Mumbai.
+- With the queries conducted, there was more of a focus on the study of node ???places??? rather than ways and their respective node 'waypoints'. A large number of nodes do not include any kind of addresses,Therefore we could compress the data by removing such orphaned waypoints.Furthermore, if ways were still needed, it would still be possible to remove any ???orphaned??? nodes that were only referenced in the removed relation and member tags.
+- There are still several opportunities for cleaning and validation that I left unexplored. Of note, the data set is populated only from one source: OpenStreetMaps. While this crowdsourced repository pulls from multiple sources. It would have been an interesting exercise to validate and/or pull missing information (i.e. names) from the Google Maps API, since every node has latitude-longitude coordinates.
 
 ```
 >>>pipeline = [
@@ -281,6 +316,8 @@ for doc in db.mumbaifinal.aggregate([{"$match":{"amenity":{"$exists":1}, "amenit
  u'type': u'node'}
  ...
 ```
+
+
 
 ## Conclusion
 
