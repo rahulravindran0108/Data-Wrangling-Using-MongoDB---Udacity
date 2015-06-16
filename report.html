@@ -120,6 +120,30 @@ img {
 <pre><code>&lt;tag k=&quot;addr:postcode&quot; v=&quot;61&quot;/&gt; =&gt; &lt;tag k=&quot;addr:postcode&quot; v=&quot;400061&quot;/&gt; 
 &lt;tag k=&quot;addr:postcode&quot; v=&quot;98&quot;/&gt; =&gt; &lt;tag k=&quot;addr:postcode&quot; v=&quot;400098&quot;/&gt; 
 &lt;tag k=&quot;addr:postcode&quot; v=&quot;71&quot;/&gt; =&gt; &lt;tag k=&quot;addr:postcode&quot; v=&quot;400071&quot;/&gt; </code></pre>
+<p>The reason to do this all zip codes in mumbai can be expressed in two forms:</p>
+<ul>
+<li>they are done using two digits like 98,64,45 with 4000 prepended remaining obvious.</li>
+<li>therefore, in order to make sure all zip codes are in this format 4000+area code.</li>
+</ul>
+<p>Since, the code was short and there weren’t many instances of the same, attaching the snippet used</p>
+<pre><code>def is_post_code(elem):
+    return (elem.attrib['k'] == &quot;addr:postcode&quot;)
+
+# this part of the snippet is the same as in the case of iterative parser.
+for tag in elem.iter(&quot;tag&quot;):
+                if is_post_code(tag):
+                    if audit_post_code(tag.attrib['v']):
+                        #Update the tag attribtue
+                        tag.attrib['v'] = update_name(tag.attrib['v'])
+
+def audit_post_code(post_code):
+  if len(postcode) == 2:
+    return true
+  else:
+    return false
+
+def update_name(post_code):
+  return '4000'+post_code</code></pre>
 </div>
 <div id="data-overview" class="section level2">
 <h2>Data Overview</h2>
